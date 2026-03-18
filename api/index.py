@@ -149,3 +149,12 @@ async def unfilled_orders(limit: int = Query(default=24, ge=1, le=120)):
     """Unfilled orders for manufacturing industries"""
     data = await fetch_fred("AMDMUONS", limit)
     return {"indicator": "Unfilled Orders: Manufacturing", "series_id": "AMDMUONS", "unit": "Millions of USD", "frequency": "Monthly", "source": "FRED", "updated_at": datetime.utcnow().isoformat() + "Z", "data": data}
+
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    if request.url.path == "/":
+        return await call_next(request)
+    key = request.headers.get("X-RapidAPI-Key", "")
+    if not key:
+        return JSONResponse(status_code=401, content={"detail": "Missing X-RapidAPI-Key header"})
+    return await call_next(request)
